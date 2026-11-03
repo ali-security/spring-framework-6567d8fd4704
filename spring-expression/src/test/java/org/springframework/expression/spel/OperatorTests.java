@@ -571,6 +571,9 @@ class OperatorTests extends AbstractExpressionTests {
 		evaluate("'abc' * 0", "", String.class);
 		evaluate("'abc' * 1", "abc", String.class);
 		evaluate("'abc' * 2", "abcabc", String.class);
+		// empty text or a zero count must return at once, not loop up to count times
+		evaluate("'' * 2147483647", "", String.class);
+		evaluate("'' * 0", "", String.class);
 
 		Expression expr = parser.parseExpression("'a' * 256");
 		assertThat(expr.getValue(context, String.class)).hasSize(256);

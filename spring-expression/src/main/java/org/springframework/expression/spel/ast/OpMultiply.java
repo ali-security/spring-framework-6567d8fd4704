@@ -84,6 +84,7 @@ public class OpMultiply extends Operator {
 		if (leftOperand instanceof Number && rightOperand instanceof Number) {
 			Number leftNumber = (Number) leftOperand;
 			Number rightNumber = (Number) rightOperand;
+			state.trackOperation();
 
 			if (leftNumber instanceof BigDecimal || rightNumber instanceof BigDecimal) {
 				BigDecimal leftBigDecimal = NumberUtils.convertNumberToTargetClass(leftNumber, BigDecimal.class);
@@ -117,11 +118,20 @@ public class OpMultiply extends Operator {
 			}
 		}
 
+		if (leftOperand instanceof String && rightOperand instanceof Integer &&
+				(((String) leftOperand).isEmpty() || (Integer) rightOperand == 0)) {
+			// Nothing to repeat: return at once rather than looping up to count times.
+			// Only 5.3.x has this loop; 6.x uses String.repeat, which returns immediately.
+			state.trackOperation();
+			return new TypedValue("");
+		}
+
 		if (leftOperand instanceof String && rightOperand instanceof Integer) {
 			String text = (String) leftOperand;
 			int count = (Integer) rightOperand;
 			int requestedSize = text.length() * count;
 			checkRepeatedTextSize(requestedSize);
+			state.trackOperation();
 			StringBuilder result = new StringBuilder(requestedSize);
 			for (int i = 0; i < count; i++) {
 				result.append(text);

@@ -18,6 +18,8 @@ package org.springframework.expression.spel;
 
 import org.springframework.core.SpringProperties;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Configuration object for the SpEL expression parser.
@@ -30,8 +32,23 @@ import org.springframework.lang.Nullable;
  */
 public class SpelParserConfiguration {
 
+	/**
+	 * Default maximum number of operations permitted during SpEL expression evaluation: {@value}.
+	 * @since 5.3.39
+	 * @see #SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME
+	 */
+	public static final int DEFAULT_MAX_OPERATIONS = 10_000;
+
 	/** System property to configure the default compiler mode for SpEL expression parsers: {@value}. */
 	public static final String SPRING_EXPRESSION_COMPILER_MODE_PROPERTY_NAME = "spring.expression.compiler.mode";
+
+	/**
+	 * System property to configure the default maximum number of operations permitted
+	 * during SpEL expression evaluation: {@value}.
+	 * @since 5.3.39
+	 * @see #DEFAULT_MAX_OPERATIONS
+	 */
+	public static final String SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME = "spring.expression.maxOperations";
 
 
 	private static final SpelCompilerMode defaultCompilerMode;
@@ -53,6 +70,8 @@ public class SpelParserConfiguration {
 	private final boolean autoGrowCollections;
 
 	private final int maximumAutoGrowSize;
+
+	private final int maximumOperations;
 
 
 	/**
@@ -107,6 +126,7 @@ public class SpelParserConfiguration {
 		this.autoGrowNullReferences = autoGrowNullReferences;
 		this.autoGrowCollections = autoGrowCollections;
 		this.maximumAutoGrowSize = maximumAutoGrowSize;
+		this.maximumOperations = retrieveMaxOperations();
 	}
 
 
@@ -144,6 +164,37 @@ public class SpelParserConfiguration {
 	 */
 	public int getMaximumAutoGrowSize() {
 		return this.maximumAutoGrowSize;
+	}
+
+	/**
+	 * Return the maximum number of operations permitted during SpEL expression
+	 * evaluation.
+	 * <p>The value is resolved from the {@link #SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME}
+	 * JVM system property or Spring property when this configuration is created,
+	 * falling back to {@link #DEFAULT_MAX_OPERATIONS}.
+	 * @since 5.3.39
+	 */
+	public int getMaximumOperations() {
+		return this.maximumOperations;
+	}
+
+
+	private static int retrieveMaxOperations() {
+		String value = SpringProperties.getProperty(SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME);
+		if (!StringUtils.hasText(value)) {
+			return DEFAULT_MAX_OPERATIONS;
+		}
+
+		try {
+			int maxOperations = Integer.parseInt(value.trim());
+			Assert.isTrue(maxOperations > 0, "Value [" + maxOperations + "] for system property [" +
+					SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME + "] must be positive");
+			return maxOperations;
+		}
+		catch (NumberFormatException ex) {
+			throw new IllegalArgumentException("Failed to parse value for system property [" +
+					SPRING_EXPRESSION_MAX_OPERATIONS_PROPERTY_NAME + "]: " + ex.getMessage(), ex);
+		}
 	}
 
 }
