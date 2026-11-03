@@ -18,11 +18,14 @@ package org.springframework.expression.spel;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.util.ObjectUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Test construction of arrays.
@@ -64,6 +67,13 @@ class ArrayConstructorTests extends AbstractExpressionTests {
 		evaluate("new float[]{1f,2f,3f,4f}[0]", (float) 1, Float.class);
 		evaluate("new byte[]{1,2,3,4}[0]", (byte) 1, Byte.class);
 		evaluate("new String(new char[]{'h','e','l','l','o'})", "hello", String.class);
+	}
+
+	@Test
+	void noArrayConstruction() {
+		EvaluationContext context = SimpleEvaluationContext.forReadWriteDataBinding().build();
+		assertThatExceptionOfType(SpelEvaluationException.class).isThrownBy(() ->
+				parser.parseExpression("new int[2]").getValue(context));
 	}
 
 	@Test
