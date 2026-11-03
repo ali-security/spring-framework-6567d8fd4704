@@ -580,6 +580,14 @@ class OperatorTests extends AbstractExpressionTests {
 
 		// 4 is the position of the '*' (repeat operator)
 		evaluateAndCheckError("'a' * 257", String.class, MAX_REPEATED_TEXT_SIZE_EXCEEDED, 4);
+
+		// A plainly oversized repeat is rejected.
+		evaluateAndCheckError("'a' * 1000", String.class, MAX_REPEATED_TEXT_SIZE_EXCEEDED);
+
+		// CVE-2026-41849: an int overflow in length * count must not bypass the size guard.
+		// 'aa'.length() (2) * 1073741824 == 2147483648, which wraps to Integer.MIN_VALUE as an
+		// int. The size is now computed as a long, so the overflowing repeat is still rejected.
+		evaluateAndCheckError("'aa' * 1073741824", String.class, MAX_REPEATED_TEXT_SIZE_EXCEEDED);
 	}
 
 	@Test
